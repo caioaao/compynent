@@ -1,6 +1,4 @@
-import sys
-
-from contextlib import AbstractContextManager, ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager
 
 
 def _ensure_completenes(components):

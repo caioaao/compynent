@@ -3,7 +3,6 @@
 """Tests for `compynent` package."""
 
 from contextlib import AbstractContextManager, contextmanager
-import pytest
 
 from compynent import build_system, system_context
 
@@ -23,6 +22,7 @@ class InitCounter(AbstractContextManager):
     def __exit__(self, *args):
         self.cnt = -1
 
+
 class Config(AbstractContextManager):
     def __init__(self, init_counter):
         self._counter = init_counter
@@ -36,6 +36,7 @@ class Config(AbstractContextManager):
     def __exit__(self, *args):
         self.bar = None
         self.incr = None
+
 
 class Counter(AbstractContextManager):
     def __init__(self, counter, config: Config):
@@ -52,6 +53,7 @@ class Counter(AbstractContextManager):
 
     def __exit__(self, *args):
         self.counter = None
+
 
 class App(AbstractContextManager):
     def __init__(self, cfg: Config, counter: Counter, init_counter):
@@ -72,6 +74,7 @@ class App(AbstractContextManager):
     def __exit__(self, *args):
         pass
 
+
 def sys_config():
     return {'app': (App, ['counter', 'cfg', 'init_counter']),
             'init_counter': (InitCounter, []),
@@ -79,10 +82,12 @@ def sys_config():
             'counter': (Counter, {'cfg': 'config',
                                   'init_counter': 'counter'})}
 
+
 def test_dag():
     _, order = build_system(sys_config())
     assert order == ['init_counter', 'cfg', 'counter', 'app']
     pass
+
 
 def test_system_map():
     sys_map, _ = build_system(sys_config())
@@ -96,6 +101,7 @@ def test_system_map():
     assert sys_map['app']._counter is sys_map['counter']
     assert sys_map['counter']._config is sys_map['cfg']
 
+
 def test_initialization_order():
     sys_map, order = build_system(
         sys_config())
@@ -107,6 +113,7 @@ def test_initialization_order():
     assert ctx['counter']._when == 2
     assert ctx['app']._when == 3
 
+
 def test_context_management():
     sys_map, order = build_system(
         sys_config())
@@ -116,6 +123,7 @@ def test_context_management():
         ctx['app'].incr_counter()
         assert ctx['app'].get_counter() == 11
     assert ctx['app'].get_counter() is None
+
 
 def test_using_generators():
     @contextmanager

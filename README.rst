@@ -28,8 +28,9 @@ Install
 
 Recommended install is using pip:
 
+.. code-block:: console
 
-``pip install compynent``
+    $ pip install compynent
 
 
 Usage
