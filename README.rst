@@ -33,16 +33,14 @@ Recommended install is using pip:
     $ pip install compynent
 
 
-Usage
------
+Quick start
+-----------
 
-The first step is to learn about `context managers`_. Go ahead, I'll wait.
+"Components" in your application are just context managers. All of them receive their dependencies in their init, and they will be initialized by the time the context is "entered".
 
-Now that you know what is the basis for this library, everything else is trivial. "Components" in your application are just context managers. All of them receive their dependencies in their init, and they will be initialized by the time the context is "entered".
+For example, let's define two components `A`, and `B`, and `A` depends on `B`.
 
-For an example, let's define two components `A`, and `B`, and `A` depends on `B`.
-
-.. testsetup:: *
+.. code-block:: python
 
    from contextlib import contextmanager
    @contextmanager
@@ -59,7 +57,7 @@ For an example, let's define two components `A`, and `B`, and `A` depends on `B`
 
 Now, let's define our system config and use it inside a context:
 
-.. testcode:: basic_usage
+.. code-block:: python
 
    from compynent import System
    system = System({'a': (component_a, ['b']),
@@ -68,9 +66,7 @@ Now, let's define our system config and use it inside a context:
        print('A: %d' % ctx['a'])
        print('B: %d' % ctx['b'])
 
-When we run the code block above, we get:
-
-.. testoutput:: basic_usage
+When we run the code block above, we get::
 
    entered B
    entered A
