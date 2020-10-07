@@ -158,9 +158,10 @@ if "pytest" in sys.modules:
 
         with system_context(sys_map, order) as ctx:
             pass
-        assert sys_map['cfg']._when == 1
-        assert sys_map['counter']._when == 2
-        assert sys_map['app']._when == 3
+
+        assert ctx['cfg']._when == 1
+        assert ctx['counter']._when == 2
+        assert ctx['app']._when == 3
 
     def test_context_management():
         sys_map, order = build_system(
@@ -171,3 +172,19 @@ if "pytest" in sys.modules:
             ctx['app'].incr_counter()
             assert ctx['app'].get_counter() == 11
         assert ctx['app'].get_counter() is None
+
+    def test_using_generators():
+        @contextmanager
+        def make_counter():
+            counter = [0]
+            try:
+                yield counter
+            finally:
+                counter[0] -= 1
+
+        sys_map, order = build_system({'cnt': (make_counter, [])})
+
+        with system_context(sys_map, order) as ctx:
+            assert ctx['cnt'] == [0]
+            ctx['cnt'][0] = 123
+        assert ctx['cnt'] == [122]
