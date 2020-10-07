@@ -42,45 +42,43 @@ Now that you know what is the basis for this library, everything else is trivial
 
 For an example, let's define two components `A`, and `B`, and `A` depends on `B`.
 
+.. testsetup:: *
 
->>> from contextlib import contextmanager
->>> @contextmanager
-... def component_a(b):
-...    print('entered A')
-...    yield b
-...    print('exiting A')
->>> @contextmanager
-... def component_b():
-...     print('entered B')
-...     yield 35
-...     print('exiting B')
-
-
-Now, let's define our system config:
-
->>> from compynent import build_system
->>> system = build_system({'a': (component_a, ['b']),
-...                        'b': (component_b, [])})
+   from contextlib import contextmanager
+   @contextmanager
+   def component_a(b):
+       print('entered A')
+       yield b
+       print('exiting A')
+   @contextmanager
+   def component_b():
+       print('entered B')
+       yield 35
+       print('exiting B')
 
 
-When we run the code block above, we get::
+Now, let's define our system config and use it inside a context:
 
- entered B
- entered A
+.. testcode:: basic_usage
 
-Now, to actually run our system, we do:
+   from compynent import System
+   system = System({'a': (component_a, ['b']),
+                    'b': (component_b, [])})
+   with system.start() as ctx:
+       print('A: %d' % ctx['a'])
+       print('B: %d' % ctx['b'])
 
->>> from compynent import system_context
->>> with system_context(*system) as ctx:  # `build_system' actually returns a tuple with the system and the calculated execution order
-...     print(ctx['a'])
-...     print(ctx['b'])
+When we run the code block above, we get:
 
-Now we get the output::
+.. testoutput:: basic_usage
 
- 35
- 35
- exiting A
- exiting B
+   entered B
+   entered A
+   A: 35
+   B: 35
+   exiting A
+   exiting B
+
 
 But why?
 --------

@@ -4,7 +4,7 @@
 
 from contextlib import AbstractContextManager, contextmanager
 
-from compynent import build_system, system_context
+from compynent import System
 
 
 class InitCounter(AbstractContextManager):
@@ -84,29 +84,27 @@ def sys_config():
 
 
 def test_dag():
-    _, order = build_system(sys_config())
-    assert order == ['init_counter', 'cfg', 'counter', 'app']
+    sys = System(sys_config())
+    assert sys.order == ['init_counter', 'cfg', 'counter', 'app']
     pass
 
 
 def test_system_map():
-    sys_map, _ = build_system(sys_config())
+    sys = System(sys_config())
     # assert top level
-    assert isinstance(sys_map['app'], App)
-    assert isinstance(sys_map['cfg'], Config)
-    assert isinstance(sys_map['counter'], Counter)
+    with sys.start() as ctx:
+        assert isinstance(ctx['app'], App)
+        assert isinstance(ctx['cfg'], Config)
+        assert isinstance(ctx['counter'], Counter)
 
-    # assert dependencies
-    assert sys_map['app']._config is sys_map['cfg']
-    assert sys_map['app']._counter is sys_map['counter']
-    assert sys_map['counter']._config is sys_map['cfg']
+        # assert dependencies
+        assert ctx['app']._config is ctx['cfg']
+        assert ctx['app']._counter is ctx['counter']
+        assert ctx['counter']._config is ctx['cfg']
 
 
 def test_initialization_order():
-    sys_map, order = build_system(
-        sys_config())
-
-    with system_context(sys_map, order) as ctx:
+    with System(sys_config()).start() as ctx:
         pass
 
     assert ctx['cfg']._when == 1
@@ -115,10 +113,7 @@ def test_initialization_order():
 
 
 def test_context_management():
-    sys_map, order = build_system(
-        sys_config())
-
-    with system_context(sys_map, order) as ctx:
+    with System(sys_config()).start() as ctx:
         assert ctx['app'].get_counter() == 1
         ctx['app'].incr_counter()
         assert ctx['app'].get_counter() == 11
@@ -134,9 +129,13 @@ def test_using_generators():
         finally:
             counter[0] -= 1
 
-    sys_map, order = build_system({'cnt': (make_counter, [])})
+    @contextmanager
+    def make_outer(counter):
+        yield counter[0] + 1
 
-    with system_context(sys_map, order) as ctx:
+    system = System({'cnt': (make_counter, []),
+                     'outer': (make_outer, {'cnt': 'counter'})})
+    with system.start() as ctx:
         assert ctx['cnt'] == [0]
         ctx['cnt'][0] = 123
     assert ctx['cnt'] == [122]

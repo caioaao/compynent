@@ -7,7 +7,6 @@ Welcome to compynent's documentation!
 
    readme
    installation
-   usage
    modules
 
 Indices and tables

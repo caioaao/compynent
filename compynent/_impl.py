@@ -31,31 +31,24 @@ def _toposort(components):
     return sorted_components
 
 
-def _build_system_map(components, order):
-    system_map = {}
-    for component_name in order:
-        config = components[component_name]
-        system_map[component_name] = config['constructor'](
-            **{dep_alias: system_map[dep_name]
-               for dep_name, dep_alias in config['aliases'].items()})
-    return system_map
+class System:
+    def __init__(self, components):
+        self.components = {
+            name: {'dependencies': list(deps.keys()) if isinstance(deps, dict) else list(deps),
+                   'aliases': deps if isinstance(deps, dict) else {v: v for v in deps},
+                   'constructor': constructor}
+            for name, (constructor, deps) in components.items()}
+        _ensure_completenes(self.components)
+        self.order = _toposort(self.components)
 
-
-def build_system(components):
-    components = {
-        name: {'dependencies': list(deps.keys()) if isinstance(deps, dict) else list(deps),
-               'aliases': deps if isinstance(deps, dict) else {v: v for v in deps},
-               'constructor': constructor}
-        for name, (constructor, deps) in components.items()}
-    _ensure_completenes(components)
-    order = _toposort(components)
-    return _build_system_map(components, order), order
-
-
-@contextmanager
-def system_context(system_map, order):
-    initialized_map = {}
-    with ExitStack() as stack:
-        for name in order:
-            initialized_map[name] = stack.enter_context(system_map[name])
-        yield initialized_map
+    @contextmanager
+    def start(self):
+        system_map = {}
+        with ExitStack() as stack:
+            for component_name in self.order:
+                config = self.components[component_name]
+                component_context = config['constructor'](
+                    **{dep_alias: system_map[dep_name]
+                       for dep_name, dep_alias in config['aliases'].items()})
+                system_map[component_name] = stack.enter_context(component_context)
+            yield system_map
